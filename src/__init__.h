@@ -105,6 +105,7 @@ void    client_Destruct(Client *client);
 
 // bot.c
 void    AuthenticateBot(void **arg);
+void    handle_bot(FFA *ffa, Client *bot);
 int     extract_n_parse_auth(str_t info);
 
 // user.c

@@ -33,6 +33,7 @@ void AuthenticateBot(void **arg) {
     // Validate bot
     if(!extract_n_parse_auth(bot_info)) {
         printf("[ - ] Error, Bot %s tried connecting with %s", bot_sock->ip->data, bot_info->data);
+        str_Destruct(bot_info);
         sock_Destruct(bot_sock);
         pthread_exit(NULL);
         return;
@@ -42,21 +43,51 @@ void AuthenticateBot(void **arg) {
     if(str_Contains(bot_info, ";"))
         args = str_SplitAt(bot_info, ';');
 
-    str_t bot_name = (str_t)args->arr[0];
-    str_t HWID = (str_t)args->arr[1];
-
-    // find owner of the bot
-
-    client_t client = create_client(ffa, bot_sock);
-    if(!client)
+    if(args->idx != 2)
     {
-        printf("[ - ] Error, Unable to create client instanse!\n");
+        printf("[ - ] Error, Invalid key info: %s\n", bot_info->data);
+        str_Destruct(bot_info);
         sock_Destruct(bot_sock);
         pthread_exit(NULL);
         return;
     }
 
+    str_t bot_name = (str_t)args->arr[0];
+    str_t HWID = (str_t)args->arr[1];
+
+    User *check = find_bot(ffa, bot_name, HWID);
+    if(!check)
+    {
+        printf("[ - ] Error, Unable to find bot owner!\n");
+        str_Destruct(bot_info);
+        sock_Destruct(bot_sock);
+        pthread_exit(NULL);
+        return;
+    }
+
+    client_t client = create_client(ffa, bot_sock);
+    if(!client)
+    {
+        printf("[ - ] Error, Unable to create client instanse!\n");
+        str_Destruct(bot_info);
+        sock_Destruct(bot_sock);
+        pthread_exit(NULL);
+        return;
+    }
+    
+    str_Destruct(bot_info);
     arr_Append(__FFA__->BotChannel->Clients, client);
+    handle_bot(ffa, client);
+}
+
+void handle_bot(FFA *ffa, Client *bot) {
+    bot->running = 1;
+    str_t buff = NULL;
+    while(bot->running != 0 && (buff = sock_read(bot->con)) != NULL) {
+
+        str_Destruct(buff);
+        buff = NULL;
+    }
 }
 
 int extract_n_parse_auth(str_t info) {
