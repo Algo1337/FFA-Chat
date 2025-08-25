@@ -103,6 +103,7 @@ void    client_Destruct(Client *client);
 
 // bot.c
 void    AuthenticateBot(void **args);
+int     extract_n_parse_auth(str_t info);
 
 // user.c
 User    *new_user(str_t *args);
