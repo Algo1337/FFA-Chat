@@ -164,7 +164,14 @@ void *send_data(FFA *ffa, cmd_t action, const char *data) {
     
     switch(action) {
         case __send_msg__:
-            str_t dm_buff = new_str(strdup("new_msg: "), 0);
+            str_t msg_buff = new_str(strdup("new_msg: "), 0);
+            str_cAppend(msg_buff, (char *)data);
+            sock_write(ffa->Server, msg_buff->data);
+            str_Destruct(msg_buff);
+
+            return (void *)1;
+        case __send_dm__:
+            str_t dm_buff = new_str(strdup("new_dm: "), 0);
             str_cAppend(dm_buff, (char *)data);
             sock_write(ffa->Server, dm_buff->data);
             str_Destruct(dm_buff);
