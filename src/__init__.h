@@ -70,6 +70,8 @@ typedef struct {
     int         listening;
 } FFA;
 
+typedef void *(*handler_t)(str_t);
+
 extern FFA *__FFA__;
 
 // __init__.h

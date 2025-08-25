@@ -84,7 +84,11 @@ void handle_bot(FFA *ffa, Client *bot) {
     bot->running = 1;
     str_t buff = NULL;
     while(bot->running != 0 && (buff = sock_read(bot->con)) != NULL) {
+        // Get commands from bot
 
+        /* send_msg: <msg> */
+        /* send_dm: <user> <msg> */
+        /* get_role_members: <role> */
         str_Destruct(buff);
         buff = NULL;
     }
