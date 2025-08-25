@@ -61,6 +61,21 @@ User *find_user(FFA *ffa, str_t name) {
     return NULL;
 }
 
+User *find_bot(FFA *ffa, str_t bot_name, str_t hwid) {
+    if(!ffa || !bot_name || !hwid)
+        return NULL;
+
+    for(int i = 0; i < ffa->users->idx; i++) {
+        if(!ffa->users->arr[i])
+            break;
+
+        if(!strcmp(((user_t)ffa->users->arr[i])->bot->data, bot_name->data) && !strcmp(((user_t)ffa->users->arr[i])->hwid->data, hwid->data))
+            return ((user_t)ffa->users->arr[i]);
+    }
+
+    return NULL;
+}
+
 arr_t get_role_members(FFA *ffa, int rank) {
     if(!ffa)
         return NULL;
@@ -143,6 +158,10 @@ int SaveDatabase(FFA *ffa) {
         str_iAppend(&new_db, u->color);
         str_cAppend(&new_db, "','");
         str_iAppend(&new_db, u->rank);
+        str_cAppend(&new_db, "','");
+        str_Append(&new_db, u->bot);
+        str_cAppend(&new_db, "','");
+        str_Append(&new_db, u->hwid);
         str_cAppend(&new_db, "')\n");
     }
 

@@ -27,6 +27,7 @@ typedef struct {
     int         color;
     int         rank;
     str_t       bot;
+    str_t       hwid;
 } User;
 
 typedef User *user_t;
@@ -84,6 +85,7 @@ int     clients_Remove(FFA *ffa, Client *client);
 // db.c
 int     read_user_database(FFA *ffa);
 User    *find_user(FFA *ffa, str_t name);
+User    *find_bot(FFA *ffa, str_t bot_name, str_t hwid);
 User    *create_user(FFA *ffa, const char *username);
 int     user_Remove(FFA *ffa, user_t acc);
 int     SaveDatabase(FFA *ffa);
@@ -102,7 +104,7 @@ str_t   get_mute_reason(Client *c);
 void    client_Destruct(Client *client);
 
 // bot.c
-void    AuthenticateBot(void **args);
+void    AuthenticateBot(void **arg);
 int     extract_n_parse_auth(str_t info);
 
 // user.c

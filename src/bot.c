@@ -8,16 +8,17 @@
 
 */
 // cfk_v1_0_CONNECT
-// sfk_v1_0
+// sfk_v1_0_CONNECT;HWID
+// cfk_v1_0_CONNECT;app_name;HWID
 #define KEY_RECV_IDENIFIER "cfk_"
 #define KEY_SEND_IDENIFIER "sfk_"
 
 #define KEY_VERSION "v1_0"
 
-void AuthenticateBot(void **args) {
-    FFA *ffa = (FFA *)args[0];
-    sock_t bot_sock = (sock_t)args[1];
-    pthread_t tid = *(pthread_t *)args[2];
+void AuthenticateBot(void **arg) {
+    FFA *ffa = (FFA *)arg[0];
+    sock_t bot_sock = (sock_t)arg[1];
+    pthread_t tid = *(pthread_t *)arg[2];
 
     sock_set_read_timeout(bot_sock, 10);
     str_t bot_info = sock_read(bot_sock);
@@ -36,6 +37,13 @@ void AuthenticateBot(void **args) {
         pthread_exit(NULL);
         return;
     }
+
+    arr_t args = NULL;
+    if(str_Contains(bot_info, ";"))
+        args = str_SplitAt(bot_info, ';');
+
+    str_t bot_name = (str_t)args->arr[0];
+    str_t HWID = (str_t)args->arr[1];
 
     // find owner of the bot
 
@@ -65,7 +73,7 @@ int extract_n_parse_auth(str_t info) {
     if(!str_StartsWith(info, KEY_VERSION))
         return 0;
 
-    len = strlen(KEY_VERSION) + 1;
+    len = strlen(KEY_VERSION) + strlen("_CONNECT;") + 1;
     for(int i = 0; i < len; i++) 
         str_TrimAt(info, 0);
 
