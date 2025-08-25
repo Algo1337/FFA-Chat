@@ -6,6 +6,8 @@ int main() {
         printf("[ - ] Error, Cannot start...!\n");
         return 1;
     }
-    sleep(900000);
+
+    char BUFF[5];
+    fgets(BUFF, 5, stdin);
     return 0;
 }
