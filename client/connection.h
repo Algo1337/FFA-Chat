@@ -53,6 +53,7 @@ FFA *init_ffa(void);
 static int is_command_valid(FFA *ffa, str_t cmd);
 char *get_hwid();
 void start_bot(FFA *ffa, const char *appname);
+int reset_buffer(FFA *ffa);
 int set_onjoin_handler(FFA *ffa, void *handler);
 int set_onmessage_handler(FFA *ffa, void *handler);
 int add_command(FFA *ffa, Command cmd);

@@ -23,6 +23,8 @@ void help_cmd(str_t buffer) {
         printf("[ - ] Error, Unable to send data to FFA server!\n");
         exit(0);
     }
+
+    reset_buffer(__FFA__);
 }
 
 int main() {

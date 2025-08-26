@@ -58,8 +58,6 @@ char *get_hwid() {
 
     char BUFF[sz];
     int rbytes = fread(&BUFF, 1, sz, fd);
-    if(rbytes != sz)
-        printf("[ - ] Error, Unable to cmd respnse correctly %s:%d\n", __FILE__, __LINE__);
 
     fclose(fd);
     if(strlen(BUFF) > 0)
@@ -90,13 +88,10 @@ void start_bot(FFA *ffa, const char *appname) {
     while(ffa->listening != 0 && (buff = sock_read(ffa->Server)) != NULL) { 
         if(ffa->buffer && !str_StartsWith(buff, "new_msg") && !str_StartsWith(buff, "new_dm") && !str_StartsWith(buff, "on_join"))
         {
-            arr_t args = str_SplitAt(buff, ' ');
-            size_t rm_len = strlen(((str_t)args->arr[0])->data) + 1;
-            for(int i = 0; i < rm_len; i++)
-                str_TrimAt(buff, 0);
+            int cpos = str_FindChar(buff, ' ', 0);
+            str_t nbuff = new_str(str_GetSub(buff, cpos, buff->idx), 0);
 
-            arr_Destruct(args, str_Destruct);
-            ffa->buffer = strdup(buff->data);
+            ffa->buffer = strdup(nbuff->data);
             memset(buff->data, 0, buff->idx);
             buff->idx = 0;
             continue;
@@ -104,16 +99,15 @@ void start_bot(FFA *ffa, const char *appname) {
 
         if(str_StartsWith(buff, "new_msg") || str_StartsWith(buff, "new_dm"))
         {
+            int cpos = str_FindChar(buff, ' ', 0);
+            str_t nbuff = new_str(str_GetSub(buff, cpos, buff->idx), 0);
             if(ffa->OnMessage)
-                ((handler_t)(void *)ffa->OnMessage)(buff);
-            arr_t args = str_SplitAt(buff, ' ');
-            size_t rm_len = ((str_t)args->arr[0])->idx + 1;
-            for(int i = 0; i < rm_len; i++)
-                str_TrimAt(buff, 0);
+                ((handler_t)(void *)ffa->OnMessage)(nbuff);
 
+            arr_t args = str_SplitAt(buff, ' ');
             int pos = 0;
             if((pos = is_command_valid(ffa, (str_t)args->arr[1])) != -1)
-                ((handler_t)((Command *)ffa->commands->arr[pos])->handler)(buff);
+                ((handler_t)((Command *)ffa->commands->arr[pos])->handler)(nbuff);
 
             arr_Destruct(args, str_Destruct);
         }
@@ -124,6 +118,18 @@ void start_bot(FFA *ffa, const char *appname) {
 
     str_Destruct(buff);
     sock_Destruct(ffa->Server);
+}
+
+int reset_buffer(FFA *ffa) {
+    if(!ffa)
+        return 0;
+
+    if(ffa->buffer) {
+        free(ffa->buffer);
+        ffa->buffer = NULL;
+    }
+
+    return 1;
 }
 
 int set_onjoin_handler(FFA *ffa, void *handler) {
