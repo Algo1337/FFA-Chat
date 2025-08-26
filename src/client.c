@@ -174,7 +174,18 @@ int broadcast_message(FFA *ffa, Client *c, const char *data) {
             sock_write(((Client *)__FFA__->UserChannel->Clients->arr[i])->con, "\r\n$ ");
         }
     }
-    
+
+    /* Send to bots */
+    str_t bot_buff = new_str(strdup("new_msg: "), 0);
+    str_cAppend(bot_buff, (char *)data);
+    for(int i = 0; i < ffa->BotChannel->Clients->idx; i++) {
+        if(!ffa->BotChannel->Clients->arr[i])
+            break;
+
+        sock_write(((Client *)ffa->BotChannel->Clients->arr[i])->con, bot_buff->data);
+    }
+
+    str_Destruct(bot_buff);
     str_Destruct(buff);
     free(TIME_BUFF);
     return 1;

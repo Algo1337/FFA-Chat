@@ -14,6 +14,7 @@ User *new_user(str_t *args) {
     u->color = atoi(((str_t)args[3])->data);
     u->rank = atoi(((str_t)args[4])->data);
     u->bot = str_Copy(args[5]);
+    u->hwid = str_Copy(args[6]);
 
     return u;
 }

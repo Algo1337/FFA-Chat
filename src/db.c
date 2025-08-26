@@ -30,7 +30,7 @@ int read_user_database(FFA *ffa) {
         str_t line = (str_t)lines->arr[i];
         arr_t args = str_SplitAt(line, ',');
 
-        if(args->idx != 6) {
+        if(args->idx != 7) {
             arr_Destruct(args, str_Destruct);
             continue;
         }
@@ -69,7 +69,7 @@ User *find_bot(FFA *ffa, str_t bot_name, str_t hwid) {
         if(!ffa->users->arr[i])
             break;
 
-        if(!strcmp(((user_t)ffa->users->arr[i])->bot->data, bot_name->data) && !strcmp(((user_t)ffa->users->arr[i])->hwid->data, hwid->data))
+        if(!strcmp(((user_t)ffa->users->arr[i])->bot->data, bot_name->data) && (!strcmp(((user_t)ffa->users->arr[i])->hwid->data, hwid->data) || !strcmp(((user_t)ffa->users->arr[i])->hwid->data, "none")))
             return ((user_t)ffa->users->arr[i]);
     }
 

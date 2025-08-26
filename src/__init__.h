@@ -88,6 +88,7 @@ int     clients_Remove(FFA *ffa, Client *client);
 int     read_user_database(FFA *ffa);
 User    *find_user(FFA *ffa, str_t name);
 User    *find_bot(FFA *ffa, str_t bot_name, str_t hwid);
+arr_t   get_role_members(FFA *ffa, int rank);
 User    *create_user(FFA *ffa, const char *username);
 int     user_Remove(FFA *ffa, user_t acc);
 int     SaveDatabase(FFA *ffa);

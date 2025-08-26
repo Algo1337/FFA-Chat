@@ -3,6 +3,7 @@
     "files.associations": {
         "__init__.h": "c",
         "cstdlib": "c",
-        "text_encoding": "c"
+        "text_encoding": "c",
+        "typeinfo": "c"
     }
 }

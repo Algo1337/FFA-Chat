@@ -39,13 +39,10 @@ void AuthenticateBot(void **arg) {
         return;
     }
 
-    arr_t args = NULL;
-    if(str_Contains(bot_info, ";"))
-        args = str_SplitAt(bot_info, ';');
-
-    if(args->idx != 2)
-    {
-        printf("[ - ] Error, Invalid key info: %s\n", bot_info->data);
+    str_t sub = new_str(str_GetSub(bot_info, 17, bot_info->idx), 0);
+    arr_t args = str_SplitAt(sub, ';');
+    if(!args || args->idx < 2) {
+        printf("[ - ] Unable to get app info\n");
         str_Destruct(bot_info);
         sock_Destruct(bot_sock);
         pthread_exit(NULL);
@@ -55,6 +52,7 @@ void AuthenticateBot(void **arg) {
     str_t bot_name = (str_t)args->arr[0];
     str_t HWID = (str_t)args->arr[1];
 
+    printf("%s : %s\n", bot_name->data, HWID->data);
     User *check = find_bot(ffa, bot_name, HWID);
     if(!check)
     {
@@ -87,7 +85,7 @@ void handle_bot(FFA *ffa, Client *bot) {
     while(bot->running != 0 && (buff = sock_read(bot->con)) != NULL) {
         // Get commands from bot
 
-        if(strstr(buff->data, ' ')) {
+        if(strstr(buff->data, " ")) {
             args = str_SplitAt(buff, ' ');
         }
         /* send_msg: <msg> */
@@ -97,9 +95,9 @@ void handle_bot(FFA *ffa, Client *bot) {
             if(args->idx != 2) {
                 sock_write(bot->con, "error");
             } else {
-                arr_t membs = get_role_members(ffa, atoi(args->arr[1]->data));
+                arr_t membs = get_role_members(ffa, atoi(((str_t)args->arr[1])->data));
                 str_t buff = new_str(strdup("role_members: "), 0);
-                str_t member_list = arr_Join(members, ', ');
+                str_t member_list = arr_Join(membs, ", ");
                 str_Append(buff, member_list);
                 sock_write(bot->con, buff->data);
 
@@ -113,7 +111,7 @@ void handle_bot(FFA *ffa, Client *bot) {
         str_Destruct(buff);
         buff = NULL;
         if(args) {
-            str_Destruct(args);
+            arr_Destruct(args, str_Destruct);
             args = NULL;
         }
     }
@@ -123,19 +121,12 @@ int extract_n_parse_auth(str_t info) {
     if(!info)
         return 0;
 
-    if(!str_StartsWith(info, KEY_RECV_IDENIFIER))
-        return 0;
-
-    int len = strlen(KEY_RECV_IDENIFIER);
-    for(int i = 0; i < len; i++)
-        str_TrimAt(info, 0);
-
-    if(!str_StartsWith(info, KEY_VERSION))
-        return 0;
-
-    len = strlen(KEY_VERSION) + strlen("_CONNECT;") + 1;
-    for(int i = 0; i < len; i++) 
-        str_TrimAt(info, 0);
+    char *data = "cfk_v1_0_CONNECT;";
+    size_t len = strlen("cfk_v1_0_CONNECT;");
+    for(int i = 0; i < len; i++) {
+        if(info->data[i] != data[i])
+            return 0;
+    }
 
     return 1;
 }

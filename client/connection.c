@@ -1,50 +1,4 @@
-#define CLIBP
-#include <clibp.h>
-#include <net/socket.h>
-
-#define HOST_URL "insanity.host"
-#define HOST_PORT 9999
-
-typedef enum {
-    __ffa_null__ = 0,
-    __send_msg__ = 1,
-    __send_dm__ = 2,
-    __get_role_memers__ = 3
-} cmd_t;
-
-typedef struct {
-    char    *name;
-    char    *color;
-    char    *rank;
-} User;
-
-typedef struct {
-    char    prefix;
-    char    *name;
-    int     arg_count;
-    char    *err_msg;
-    void    *handler;
-} Command;
-
-typedef Command *command_t;
-typedef arr_t commands_t;
-
-typedef struct {
-    sock_t      Server;
-    commands_t  commands;
-    void        *OnJoin;
-    void        *Handler;
-
-    // thread setting/info
-    pthread_t   tid;
-    int         listening;
-    int         get_next_buffer;
-    char        *buffer;
-} FFA;
-
-typedef FFA *ffa_t;
-
-typedef void *(*handler_t)(str_t);
+#include "connection.h"
 
 FFA *init_ffa(void) {
     FFA *ffa = (FFA *)malloc(sizeof(FFA));
@@ -58,9 +12,11 @@ FFA *init_ffa(void) {
 
     if(ffa->Server->sock <= 0) {
         free(ffa);
+        sock_Destruct(ffa->Server);
         return NULL;
     }
 
+    ffa->commands = new_arr(NULL, 0);
     if(sock_connect(ffa->Server) == -1) {
         printf("[ x ] Error, Unable to connect to FFA Server!\n");
         free(ffa);
@@ -92,13 +48,13 @@ static int is_command_valid(FFA *ffa, str_t cmd) {
 }
 
 char *get_hwid() {
-    FILE *fd = popen("cat /sys/class/dmi/id/product_uuid", "r");
+    FILE *fd = fopen("/sys/class/dmi/id/product_uuid", "r");
     if(!fd)
         return NULL;
 
     fseek(fd, 0L, SEEK_END);
     long sz = ftell(fd);
-    fseek(fd, 0L, SEEK_END);
+    fseek(fd, 0L, SEEK_SET);
 
     char BUFF[sz];
     int rbytes = fread(&BUFF, 1, sz, fd);
@@ -112,11 +68,23 @@ char *get_hwid() {
     return NULL;
 }
 
-void start_bot(FFA *ffa) {
+void start_bot(FFA *ffa, const char *appname) {
     if(!ffa)
         return;
 
     // send auth
+    char abuff[500] = {0};
+    strcat(abuff, "cfk_v1_0_CONNECT;");
+    strncat(abuff, appname, strlen(appname));
+    strcat(abuff, ";");
+    char *hwid = get_hwid();
+    if(!hwid)
+        printf("[ - ] HWID Error\n");
+
+    printf("%s\n", hwid);
+    strncat(abuff, hwid, strlen(hwid));
+    sock_write(ffa->Server, abuff);
+
 
     ffa->listening = 1;
     str_t buff = NULL;
@@ -137,6 +105,8 @@ void start_bot(FFA *ffa) {
 
         if(str_StartsWith(buff, "new_msg") || str_StartsWith(buff, "new_dm"))
         {
+            if(ffa->OnMessage)
+                ((handler_t)(void *)ffa->OnMessage)(buff);
             arr_t args = str_SplitAt(buff, ' ');
             size_t rm_len = ((str_t)args->arr[0])->idx + 1;
             for(int i = 0; i < rm_len; i++)
@@ -165,6 +135,14 @@ int set_onjoin_handler(FFA *ffa, void *handler) {
     return 1;
 }
 
+int set_onmessage_handler(FFA *ffa, void *handler) {
+    if(!ffa || !handler)
+        return 0;
+
+    ffa->OnMessage = handler;
+    return 1;
+}
+
 int add_command(FFA *ffa, Command cmd) {
     if(!ffa)
         return 0;
@@ -181,7 +159,6 @@ int add_command(FFA *ffa, Command cmd) {
     return 1;
 }
 
-FFA *__FFA__ = NULL;
 void *send_data(FFA *ffa, cmd_t action, const char *data) {
     switch(action) {
         case __send_msg__:
@@ -215,31 +192,4 @@ void *send_data(FFA *ffa, cmd_t action, const char *data) {
     }
 
     return NULL;
-}
-
-void help_cmd(str_t buffer) {
-    char *get_members = (char *)send_data(__FFA__, __get_role_memers__, "1");
-    if(!get_members)
-    {
-        printf("[ - ] Error, Unable to get members!\n");
-        return;
-    }
-
-    if(!send_data(__FFA__, __send_msg__, "Hello!")) 
-    {
-        printf("[ - ] Error, Unable to send data to FFA server!\n");
-        exit(0);
-    }
-}
-
-void on_join(User *user) {
-
-}
-
-int main() {
-    __FFA__ = init_ffa();
-    set_onjoin_handler(__FFA__, on_join);
-    add_command(__FFA__, (Command){ .prefix = '/', .name = "help", .arg_count = 0, .err_msg = NULL, .handler = help_cmd });
-    start_bot(__FFA__);
-    return 0;
 }
