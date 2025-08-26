@@ -81,7 +81,6 @@ void start_bot(FFA *ffa, const char *appname) {
     if(!hwid)
         printf("[ - ] HWID Error\n");
 
-    printf("%s\n", hwid);
     strncat(abuff, hwid, strlen(hwid));
     sock_write(ffa->Server, abuff);
 
