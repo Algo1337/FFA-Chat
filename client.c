@@ -33,6 +33,7 @@ typedef struct {
     sock_t      Server;
     commands_t  commands;
     void        *OnJoin;
+    void        *Handler;
 
     // thread setting/info
     pthread_t   tid;
@@ -90,6 +91,27 @@ static int is_command_valid(FFA *ffa, str_t cmd) {
     return -1;
 }
 
+char *get_hwid() {
+    FILE *fd = popen("cat /sys/class/dmi/id/product_uuid", "r");
+    if(!fd)
+        return NULL;
+
+    fseek(fd, 0L, SEEK_END);
+    long sz = ftell(fd);
+    fseek(fd, 0L, SEEK_END);
+
+    char BUFF[sz];
+    int rbytes = fread(&BUFF, 1, sz, fd);
+    if(rbytes != sz)
+        printf("[ - ] Error, Unable to cmd respnse correctly %s:%d\n", __FILE__, __LINE__);
+
+    fclose(fd);
+    if(strlen(BUFF) > 0)
+        return strdup(BUFF);
+
+    return NULL;
+}
+
 void start_bot(FFA *ffa) {
     if(!ffa)
         return;
@@ -107,7 +129,7 @@ void start_bot(FFA *ffa) {
                 str_TrimAt(buff, 0);
 
             arr_Destruct(args, str_Destruct);
-            memcpy(ffa->buffer, buff->data, 1024);
+            ffa->buffer = strdup(buff->data);
             memset(buff->data, 0, buff->idx);
             buff->idx = 0;
             continue;
@@ -161,7 +183,6 @@ int add_command(FFA *ffa, Command cmd) {
 
 FFA *__FFA__ = NULL;
 void *send_data(FFA *ffa, cmd_t action, const char *data) {
-    
     switch(action) {
         case __send_msg__:
             str_t msg_buff = new_str(strdup("new_msg: "), 0);
@@ -204,7 +225,7 @@ void help_cmd(str_t buffer) {
         return;
     }
 
-    if(!send_data(__FFA__, __send_msg__, "Welcome!")) 
+    if(!send_data(__FFA__, __send_msg__, "Hello!")) 
     {
         printf("[ - ] Error, Unable to send data to FFA server!\n");
         exit(0);

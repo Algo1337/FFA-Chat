@@ -2,6 +2,7 @@
     "C_Cpp.errorSquiggles": "disabled",
     "files.associations": {
         "__init__.h": "c",
-        "cstdlib": "c"
+        "cstdlib": "c",
+        "text_encoding": "c"
     }
 }

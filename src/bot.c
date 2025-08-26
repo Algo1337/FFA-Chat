@@ -83,14 +83,39 @@ void AuthenticateBot(void **arg) {
 void handle_bot(FFA *ffa, Client *bot) {
     bot->running = 1;
     str_t buff = NULL;
+    arr_t args = NULL;
     while(bot->running != 0 && (buff = sock_read(bot->con)) != NULL) {
         // Get commands from bot
 
+        if(strstr(buff->data, ' ')) {
+            args = str_SplitAt(buff, ' ');
+        }
         /* send_msg: <msg> */
         /* send_dm: <user> <msg> */
         /* get_role_members: <role> */
+        if(str_StartsWith(buff, "get_role_members: ")) {
+            if(args->idx != 2) {
+                sock_write(bot->con, "error");
+            } else {
+                arr_t membs = get_role_members(ffa, atoi(args->arr[1]->data));
+                str_t buff = new_str(strdup("role_members: "), 0);
+                str_t member_list = arr_Join(members, ', ');
+                str_Append(buff, member_list);
+                sock_write(bot->con, buff->data);
+
+                str_Destruct(member_list);
+                str_Destruct(buff);
+                arr_Destruct(membs, free);
+            }
+
+        }
+
         str_Destruct(buff);
         buff = NULL;
+        if(args) {
+            str_Destruct(args);
+            args = NULL;
+        }
     }
 }
 
