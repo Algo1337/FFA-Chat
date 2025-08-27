@@ -91,7 +91,18 @@ void handle_bot(FFA *ffa, Client *bot) {
         /* send_msg: <msg> */
         /* send_dm: <user> <msg> */
         /* get_role_members: <role> */
-        if(str_StartsWith(buff, "get_role_members: ")) {
+        if(str_StartsWith(buff, "get_all_members: ")) {
+
+            arr_t membs = get_all_members(ffa);
+            str_t buff = new_str(strdup("all_members: "), 0);
+            str_t member_list = arr_Join(membs, ", ");
+            str_Append(buff, member_list);
+            sock_write(bot->con, buff->data);
+
+            str_Destruct(member_list);
+            str_Destruct(buff);
+            arr_Destruct(membs, free);
+        } else if(str_StartsWith(buff, "get_role_members: ")) {
             if(args->idx != 2) {
                 sock_write(bot->con, "error");
             } else {
@@ -105,7 +116,6 @@ void handle_bot(FFA *ffa, Client *bot) {
                 str_Destruct(buff);
                 arr_Destruct(membs, free);
             }
-
         }
 
         str_Destruct(buff);

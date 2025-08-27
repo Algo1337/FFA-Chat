@@ -47,7 +47,7 @@ static int is_command_valid(FFA *ffa, str_t cmd) {
     return -1;
 }
 
-char *get_hwid() {
+static char *get_hwid() {
     FILE *fd = fopen("/sys/class/dmi/id/product_uuid", "r");
     if(!fd)
         return NULL;
@@ -180,6 +180,18 @@ void *send_data(FFA *ffa, cmd_t action, const char *data) {
             str_Destruct(dm_buff);
 
             return (void *)1;
+        case __get_all_members__:
+            str_t buff = new_str(strdup("get_role_memers: "), 0);
+            str_cAppend(buff, (char *)data);
+            sock_write(ffa->Server, buff->data);
+            str_Destruct(buff);
+            ffa->get_next_buffer = 1;
+
+            while(ffa->buffer == NULL) {
+                printf("[ - ] Waiting for Role Members....!\n");
+            }
+
+            return (void *)ffa->buffer;
         case __get_role_memers__:
             str_t buff = new_str(strdup("get_role_memers: "), 0);
             str_cAppend(buff, (char *)data);

@@ -11,7 +11,8 @@ typedef enum {
     __ffa_null__ = 0,
     __send_msg__ = 1,
     __send_dm__ = 2,
-    __get_role_memers__ = 3
+    __get_all_members__ = 3,
+    __get_role_memers__ = 4
 } cmd_t;
 
 typedef struct {

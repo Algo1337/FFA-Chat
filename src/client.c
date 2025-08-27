@@ -124,7 +124,6 @@ void handle_client(FFA *ffa, client_t client) {
         } else if(!strcmp(buff->data, "clear")) {
             sock_write(client->con, "\x1b[2J\x1b[1;1H");
         } else if(strstr(buff->data, "useradd")) {
-            
             continue;
         } else {
             broadcast_message(__FFA__, client, buff->data);

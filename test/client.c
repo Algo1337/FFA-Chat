@@ -11,6 +11,7 @@ void on_message(str_t buff) {
 }
 
 void help_cmd(str_t buffer) {
+    /* Get all OG members */
     char *get_members = (char *)send_data(__FFA__, __get_role_memers__, "1");
     if(!get_members)
     {
@@ -18,6 +19,7 @@ void help_cmd(str_t buffer) {
         return;
     }
 
+    /* Send Hello In Chat */
     if(!send_data(__FFA__, __send_msg__, "Hello!")) 
     {
         printf("[ - ] Error, Unable to send data to FFA server!\n");

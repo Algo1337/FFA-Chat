@@ -76,6 +76,27 @@ User *find_bot(FFA *ffa, str_t bot_name, str_t hwid) {
     return NULL;
 }
 
+arr_t get_all_members(FFA *ffa) {
+    if(!ffa)
+        return NULL;
+
+    arr_t users = new_arr(NULL, 0);
+    for(int i = 0; i < ffa->users->idx; i++) {
+        arr_Append(users, ((user_t)ffa->users->arr[o])->name->data);
+        arr_cAppend(users, ",");
+        arr_iAppend(users, ((user_t)ffa->users->arr[o])->color);
+        arr_cAppend(users, ",");
+        arr_iAppend(users, ((user_t)ffa->users->arr[o])->rank);
+        arr_cAppend(users, ";");
+    }
+
+    if(users->idx > 0)
+        return users;
+
+    arr_Destruct(users, free);
+    return users;
+}
+
 arr_t get_role_members(FFA *ffa, int rank) {
     if(!ffa)
         return NULL;
@@ -92,7 +113,7 @@ arr_t get_role_members(FFA *ffa, int rank) {
     if(users->idx > 0)
         return users;
 
-    arr_Destruct(users, NULL);
+    arr_Destruct(users, free);
     return NULL;
 }
 
@@ -101,7 +122,7 @@ User *create_user(FFA *ffa, const char *username) {
     if(!ffa || !username)
         return NULL;
     
-    char *ARR[] = {(char *)username, "none", "none", "0", "0", "none", NULL};
+    char *ARR[] = {(char *)username, "none", "none", "0", "0", "none", "none", NULL};
     User *u = (User *)malloc(sizeof(User));
     if(!u)
         return NULL;
@@ -112,6 +133,7 @@ User *create_user(FFA *ffa, const char *username) {
     u->color        = atoi(ARR[3]);
     u->rank         = atoi(ARR[4]);
     u->bot          = new_str(strdup(ARR[5]), 0);
+    u->hwid         = new_str(strdup(ARR[6]), 0);
 
     arr_Append(ffa->users, u);
     SaveDatabase(ffa);
