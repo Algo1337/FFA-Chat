@@ -260,8 +260,16 @@ int broadcast_message(FFA *ffa, Client *c, const char *data) {
     }
 
     /* Send to bots */
-    str_t bot_buff = new_str(strdup("new_msg: "), 0);
+    str_t bot_buff = new_str(strdup("new_msg;"), 0);
+
+    str_Append(bot_buff, c->acc->name);
+    str_cAppend(bot_buff, ",");
+    str_iAppend(bot_buff, c->acc->color);
+    str_cAppend(bot_buff, ",");
+    str_iAppend(bot_buff, c->acc->rank);
+    str_cAppend(bot_buff, ";");
     str_cAppend(bot_buff, (char *)data);
+    
     for(int i = 0; i < ffa->BotChannel->Clients->idx; i++) {
         if(!ffa->BotChannel->Clients->arr[i])
             break;

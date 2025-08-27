@@ -7,12 +7,14 @@ void on_join(User *user) {
 
 }
 
-void on_message(str_t buff) {
-    printf("New Message: %s\n", buff->data);
+void on_message(message_t m) {
+    printf("New Message: %s\n", m->content->data);
 }
 
-void help_cmd(str_t buffer) {
-    /* Get all OG members */
+void help_cmd(message_t message) {
+    printf("%s: %s\n", message->author->name->data, message->content->data);
+    
+    /* Get all members */
     users_t members = (users_t)send_data(__FFA__, __get_all_members__, NULL);
     if(!members)
     {

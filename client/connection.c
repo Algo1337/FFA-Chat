@@ -90,7 +90,7 @@ void start_bot(FFA *ffa, const char *appname) {
     while(ffa->listening != 0 && (buff = sock_read(ffa->Server)) != NULL) { 
         if(ffa->get_next_buffer && !str_StartsWith(buff, "new_msg") && !str_StartsWith(buff, "new_dm") && !str_StartsWith(buff, "on_join"))
         {
-            int cpos = str_FindChar(buff, ' ', 0);
+            int cpos = str_FindChar(buff, ' ', 1);
             str_t nbuff = new_str(str_GetSub(buff, cpos, buff->idx), 0);
 
             ffa->buffer = strdup(nbuff->data);
@@ -101,20 +101,34 @@ void start_bot(FFA *ffa, const char *appname) {
 
         if(str_StartsWith(buff, "new_msg") || str_StartsWith(buff, "new_dm"))
         {
-            int cpos = str_FindChar(buff, ' ', 0);
-            str_t nbuff = new_str(str_GetSub(buff, cpos, buff->idx), 0);
+            Message *m = (Message *)malloc(sizeof(Message));
+            m->is_dm = str_StartsWith(buff, "new_dm") ? 1 : 0;
+
+            int cpos = str_FindChar(buff, ';', 0);
+            int msg_pos = str_FindChar(buff, ';', 1);
+
+            m->content = new_str(str_GetSub(buff, msg_pos, buff->idx), 0);
+            m->author = (User *)malloc(sizeof(User));
+
+            str_t author = new_str(str_GetSub(buff, cpos, msg_pos), 0);
+            arr_t author_info = str_SplitAt(author, ",");
+
+            m->author->name = new_str(strdup(((str_t)author_info->arr[0])->data), 0);
+            m->author->color = atoi(((str_t)author_info->arr[1])->data);
+            m->author->rank = atoi(((str_t)author_info->arr[2])->data);
+            
             if(ffa->OnMessage)
-                ((handler_t)(void *)ffa->OnMessage)(nbuff);
+                ((handler_t)(void *)ffa->OnMessage)(m);
 
-            arr_t args = str_SplitAt(buff, ' ');
+            arr_t args = str_SplitAt(m->data, ' ');
             int pos = 0;
-            if((pos = is_command_valid(ffa, (str_t)args->arr[1])) != -1) {
-                printf("Handler Pos: %d\n", pos);
-                printf("Handler Pointer: %p\n", ((Command *)ffa->commands->arr[pos])->handler);
-                ((void *(*)(str_t))((Command *)ffa->commands->arr[pos])->handler)(nbuff);
-            }
+            if((pos = is_command_valid(ffa, (str_t)args->arr[1])) != -1) 
+                ((void *(*)(message_t))((Command *)ffa->commands->arr[pos])->handler)(m);
 
+            str_Destruct(author);
+            str_Destruct(author_info);
             arr_Destruct(args, str_Destruct);
+            message_Destruct(m);
         }
 
         str_Destruct(buff);
@@ -254,4 +268,31 @@ users_t extract_all_members(const char *buffer) {
     arr_Destruct(members, str_Destruct);
 
     return users;
+}
+
+void user_Destruct(User *u) {
+    if(!u)
+        return;
+
+    if(u->name)
+        str_Destruct(u->name);
+
+    if(u->color)
+        str_Destruct(u->color);
+}
+
+void message_Destruct(Message *m) {
+    if(!m)
+        return;
+
+    if(m->content)
+        str_Destruct(m->content);
+
+    if(m->timestamp)
+        str_Destruct(m->content);
+
+    if(m->author)
+        user_Destruct(m->author);
+
+    free(m);
 }

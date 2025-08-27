@@ -18,19 +18,21 @@ typedef enum {
 } event_t;
 
 typedef struct {
-    char    *name;
-    char    *color;
-    int     rank;
+    str_t    *name;
+    str_t    *color;
+    int       rank;
 } User;
 
 typedef struct {
     int     is_dm;
-    char    *data;
-    char    *timestamp;
+    str_t   content;
+    str_t   timestamp;
     User    *author;
 } Message;
 
 typedef User *user_t;
+typedef Message *message_t;
+
 typedef arr_t users_t;
 typedef arr_t USER_CACHE_T;
 typedef arr_t messages_t;
@@ -83,3 +85,5 @@ int set_onmessage_handler(FFA *ffa, void *handler);
 int add_command(FFA *ffa, Command cmd);
 void *send_data(FFA *ffa, event_t action, const char *data);
 users_t extract_all_members(const char *buffer);
+void user_Destruct(User *u);
+void message_Destruct(Message *m);
