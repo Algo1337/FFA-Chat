@@ -82,12 +82,10 @@ arr_t get_all_members(FFA *ffa) {
 
     arr_t users = new_arr(NULL, 0);
     for(int i = 0; i < ffa->users->idx; i++) {
-        arr_Append(users, ((user_t)ffa->users->arr[o])->name->data);
-        arr_cAppend(users, ",");
-        arr_iAppend(users, ((user_t)ffa->users->arr[o])->color);
-        arr_cAppend(users, ",");
-        arr_iAppend(users, ((user_t)ffa->users->arr[o])->rank);
-        arr_cAppend(users, ";");
+		user_t u = (user_t)ffa->users->arr[i];
+		char BUFF[500] = {0};
+		sprintf(BUFF, "%s,%d,%d", u->name->data, u->color, u->rank);
+		arr_Append(users, strdup(BUFF));
     }
 
     if(users->idx > 0)

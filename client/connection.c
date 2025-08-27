@@ -76,8 +76,10 @@ void start_bot(FFA *ffa, const char *appname) {
     strncat(abuff, appname, strlen(appname));
     strcat(abuff, ";");
     char *hwid = get_hwid();
-    if(!hwid)
+    if(!hwid) {
         printf("[ - ] HWID Error\n");
+		return;
+	}
 
     strncat(abuff, hwid, strlen(hwid));
     sock_write(ffa->Server, abuff);
@@ -193,10 +195,10 @@ void *send_data(FFA *ffa, cmd_t action, const char *data) {
 
             return (void *)ffa->buffer;
         case __get_role_memers__:
-            str_t buff = new_str(strdup("get_role_memers: "), 0);
-            str_cAppend(buff, (char *)data);
-            sock_write(ffa->Server, buff->data);
-            str_Destruct(buff);
+            str_t mbuff = new_str(strdup("get_role_memers: "), 0);
+            str_cAppend(mbuff, (char *)data);
+            sock_write(ffa->Server, mbuff->data);
+            str_Destruct(mbuff);
             ffa->get_next_buffer = 1;
 
             while(ffa->buffer == NULL) {
