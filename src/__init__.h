@@ -96,7 +96,9 @@ int     SaveDatabase(FFA *ffa);
 
 // client.c
 Client  *create_client(FFA *ffa, sock_t con);
+int     find_client(FFA *ffa, str_t name);
 void    Authentication(void **args);
+int     send_dm(FFA *ffa, Client *c, Client *to, const char *data);
 int     broadcast_message(FFA *ffa, Client *c, const char *data);
 void    handle_client(FFA *ffa, client_t client);
 int     is_user_signed_in(User *u);

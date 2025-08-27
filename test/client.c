@@ -12,11 +12,20 @@ void on_message(str_t buff) {
 
 void help_cmd(str_t buffer) {
     /* Get all OG members */
-    char *get_members = (char *)send_data(__FFA__, __get_role_memers__, "1");
-    if(!get_members)
+    users_t members = (char *)send_data(__FFA__, __get_all_members__, NULL);
+    if(!members)
     {
         printf("[ - ] Error, Unable to get members!\n");
         return;
+    }
+
+    /* debug members */
+    for(int i = 0; i < members->idx; i++) {
+        if(!members->arr[i])
+            break;
+
+        user_t member = (user_t)members->arr[i];
+        printf("Member: %s\n", member->name);
     }
 
     /* Send Hello In Chat */

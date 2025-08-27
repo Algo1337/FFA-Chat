@@ -88,7 +88,7 @@ void start_bot(FFA *ffa, const char *appname) {
     ffa->listening = 1;
     str_t buff = NULL;
     while(ffa->listening != 0 && (buff = sock_read(ffa->Server)) != NULL) { 
-        if(ffa->buffer && !str_StartsWith(buff, "new_msg") && !str_StartsWith(buff, "new_dm") && !str_StartsWith(buff, "on_join"))
+        if(ffa->get_next_buffer && !str_StartsWith(buff, "new_msg") && !str_StartsWith(buff, "new_dm") && !str_StartsWith(buff, "on_join"))
         {
             int cpos = str_FindChar(buff, ' ', 0);
             str_t nbuff = new_str(str_GetSub(buff, cpos, buff->idx), 0);
@@ -108,8 +108,11 @@ void start_bot(FFA *ffa, const char *appname) {
 
             arr_t args = str_SplitAt(buff, ' ');
             int pos = 0;
-            if((pos = is_command_valid(ffa, (str_t)args->arr[1])) != -1)
-                ((handler_t)((Command *)ffa->commands->arr[pos])->handler)(nbuff);
+            if((pos = is_command_valid(ffa, (str_t)args->arr[1])) != -1) {
+                printf("Handler Pos: %d\n", pos);
+                printf("Handler Pointer: %p\n", ((Command *)ffa->commands->arr[pos])->handler);
+                ((void *(*)(str_t))((Command *)ffa->commands->arr[pos])->handler)(nbuff);
+            }
 
             arr_Destruct(args, str_Destruct);
         }
@@ -162,11 +165,13 @@ int add_command(FFA *ffa, Command cmd) {
     if(cmd.err_msg)
         c->err_msg = strdup(cmd.err_msg);
 
+    c->handler = cmd.handler;
+
     arr_Append(ffa->commands, c);
     return 1;
 }
 
-void *send_data(FFA *ffa, cmd_t action, const char *data) {
+void *send_data(FFA *ffa, event_t action, const char *data) {
     switch(action) {
         case __send_msg__:
             str_t msg_buff = new_str(strdup("new_msg: "), 0);
@@ -183,17 +188,22 @@ void *send_data(FFA *ffa, cmd_t action, const char *data) {
 
             return (void *)1;
         case __get_all_members__:
-            str_t buff = new_str(strdup("get_role_memers: "), 0);
-            str_cAppend(buff, (char *)data);
-            sock_write(ffa->Server, buff->data);
-            str_Destruct(buff);
             ffa->get_next_buffer = 1;
+            sock_write(ffa->Server, "get_all_members");
 
-            while(ffa->buffer == NULL) {
-                printf("[ - ] Waiting for Role Members....!\n");
+            str_t buff = sock_read(ffa->Server);
+
+            users_t users = extract_all_members(buff->data);
+            if(!users)
+                return NULL;
+
+            if(users->idx == 0) {
+                free(users);
+                reset_buffer(ffa);
+                return NULL;
             }
 
-            return (void *)ffa->buffer;
+            return users;
         case __get_role_memers__:
             str_t mbuff = new_str(strdup("get_role_memers: "), 0);
             str_cAppend(mbuff, (char *)data);
@@ -211,4 +221,37 @@ void *send_data(FFA *ffa, cmd_t action, const char *data) {
     }
 
     return NULL;
+}
+
+
+users_t extract_all_members(const char *buffer) {
+    if(!buffer)
+        return NULL;
+
+    str_t buff = new_str(strdup(buffer), 0);
+    str_t membs = new_str(str_GetSub(buff, strlen("all_members: "), buff->idx), 0);
+    arr_t members = str_SplitAt(membs, ';');
+
+    users_t users = new_arr(NULL, 0);
+    for(int i = 0; i < members->idx; i++) {
+        arr_t args = str_SplitAt((str_t)members->arr[i], ',');
+        if(args->idx != 3) {
+            arr_Destruct(args, str_Destruct);
+            continue;
+        }
+
+        User *u = (User *)malloc(sizeof(User));
+        u->name = strdup(((str_t)args->arr[0])->data);
+        u->color = strdup(((str_t)args->arr[1])->data);
+        u->rank = atoi(((str_t)args->arr[1])->data);
+
+        arr_Append(users, u);
+        arr_Destruct(args, str_Destruct);
+    }
+
+    str_Destruct(membs);
+    str_Destruct(buff);
+    arr_Destruct(members, str_Destruct);
+
+    return users;
 }

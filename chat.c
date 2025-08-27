@@ -2,6 +2,7 @@
 
 FFA *__FFA__ = NULL;
 
+
 void on_join(User *user) {
 
 }
@@ -11,20 +12,29 @@ void on_message(str_t buff) {
 }
 
 void help_cmd(str_t buffer) {
-    char *get_members = (char *)send_data(__FFA__, __get_role_memers__, "1");
-    if(!get_members)
+    /* Get all OG members */
+    users_t members = (users_t)send_data(__FFA__, __get_all_members__, NULL);
+    if(!members)
     {
         printf("[ - ] Error, Unable to get members!\n");
         return;
     }
 
+    /* debug members */
+    for(int i = 0; i < members->idx; i++) {
+        if(!members->arr[i])
+            break;
+
+        user_t member = (user_t)members->arr[i];
+        printf("Member: %s\n", member->name);
+    }
+
+    /* Send Hello In Chat */
     if(!send_data(__FFA__, __send_msg__, "Hello!")) 
     {
         printf("[ - ] Error, Unable to send data to FFA server!\n");
         exit(0);
     }
-
-    reset_buffer(__FFA__);
 }
 
 int main() {

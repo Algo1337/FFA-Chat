@@ -88,18 +88,28 @@ void handle_bot(FFA *ffa, Client *bot) {
         if(strstr(buff->data, " ")) {
             args = str_SplitAt(buff, ' ');
         }
+
         /* send_msg: <msg> */
         /* send_dm: <user> <msg> */
         /* get_role_members: <role> */
-        if(str_StartsWith(buff, "get_all_members: ")) {
+        if(str_StartsWith(buff, "send_dm")) {
 
+        } else if(str_StartsWith(buff, "send_msg")) {
+            
+        } else if(!strcmp(buff->data, "get_all_members")) {
+            printf("fetched\n");
             arr_t membs = get_all_members(ffa);
-            str_t buff = new_str(strdup("all_members: "), 0);
-            str_t member_list = arr_Join(membs, ", ");
-            str_Append(buff, member_list);
-            sock_write(bot->con, buff->data);
+            if(!membs || membs == 0)
+                printf("[ - ] All members error\n");
 
-            str_Destruct(member_list);
+            str_t buff = new_str(strdup("all_members: "), 0);
+            for(int i = 0; i < membs->idx; i++) {
+                str_cAppend(buff, (char *)membs->arr[i]);
+                str_cAppend(buff, ";");
+            }
+
+            printf("SENDING: %s\n", buff->data);
+            sock_write(bot->con, buff->data);
             str_Destruct(buff);
             arr_Destruct(membs, free);
         } else if(str_StartsWith(buff, "get_role_members: ")) {

@@ -92,7 +92,7 @@ arr_t get_all_members(FFA *ffa) {
         return users;
 
     arr_Destruct(users, free);
-    return users;
+    return NULL;
 }
 
 arr_t get_role_members(FFA *ffa, int rank) {

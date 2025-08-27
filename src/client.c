@@ -12,6 +12,29 @@ Client *create_client(FFA *ffa, sock_t con) {
     return c;
 }
 
+int find_client(FFA *ffa, str_t name) {
+    if(!ffa || !name)
+        return -1;
+
+    for(int i = 0; i < ffa->UserChannel->Clients->idx; i++) {
+        if(!ffa->UserChannel->Clients->arr[i])
+            break;
+        
+        if(!strcmp(((Client *)ffa->UserChannel->Clients->arr[i])->acc->name->data, name->data))
+            return i;
+    }
+
+    for(int i = 0; i < ffa->BotChannel->Clients->idx; i++) {
+        if(!ffa->UserChannel->Clients->arr[i])
+            break;
+        
+        if(!strcmp(((Client *)ffa->UserChannel->Clients->arr[i])->acc->name->data, name->data))
+            return i;
+    }
+
+    return -1;
+}
+
 void Authentication(void **args) {
     FFA *ffa = (FFA *)args[0];
     sock_t con = (sock_t)args[1];
@@ -119,12 +142,33 @@ void handle_client(FFA *ffa, client_t client) {
             continue;
             
         str_StripInput(buff);
-        if(!strcmp(buff->data, "users")) {
+        if(str_StartsWith(buff, "dm")) {
+            arr_t args = str_SplitAt(buff, ' ');
+            int pos = find_client(ffa, args->arr[1]);
+            if(pos == -1) {
+                arr_Destruct(args, str_Destruct);
+                str_Destruct(buff);
+                continue;
+            }
+
+            int len = ((str_t)args->arr[0])->idx + ((str_t)args->arr[1])->idx + 2;
+            str sub = str_GetSub(buff, len, buff->idx);
+            send_dm(ffa, client, (Client *)ffa->UserChannel->Clients->arr[pos], sub);
+            free(sub);
+            arr_Destruct(args, str_Destruct);
+        } else if(!strcmp(buff->data, "users")) {
             ListClientCmd(client);
         } else if(!strcmp(buff->data, "clear")) {
             sock_write(client->con, "\x1b[2J\x1b[1;1H");
         } else if(strstr(buff->data, "useradd")) {
-            continue;
+            if(client->acc->rank >= 3) {
+                arr_t args = str_SplitAt(buff, ' ');
+                create_user(ffa, ((str_t)args->arr[1])->data);
+                arr_Destruct(args, str_Destruct);
+                sock_write(client->con, "Account has been successfully created!\r\n");
+            } else {
+                sock_write(client->con, "Error, You do not have permissions to use this command!\r\n");
+            }
         } else {
             broadcast_message(__FFA__, client, buff->data);
         }
@@ -135,6 +179,47 @@ void handle_client(FFA *ffa, client_t client) {
 
     clients_Remove(client->base, client);
     pthread_exit(NULL);
+}
+
+int send_dm(FFA *ffa, Client *c, Client *to, const char *data) {
+    if(!ffa || !c)
+        return -1;
+
+    time_t now = time(NULL);
+    struct tm local;
+    localtime_r(&now, &local);
+
+    char *TIME_BUFF = (char *)malloc(512);
+    sprintf(TIME_BUFF, "%02d/%02d/%04d-%02d:%02d", local.tm_mon + 1, local.tm_mday, local.tm_year + 1900, local.tm_hour, local.tm_min);
+        
+    str_t buff = new_str(strdup("\a[ "), 0);
+    if(c->acc->color > 0) {
+        char* color = get_color_ansi(c->acc);
+        str_cAppend(buff, color);
+        str_Append(buff, c->acc->name);
+        str_cAppend(buff, ANSI_DEFAULT);
+    } else {
+        str_Append(buff, c->acc->name);
+    }
+
+    str_cAppend(buff, " - ");
+    str_cAppend(buff, TIME_BUFF);
+    str_cAppend(buff, " ]\r\n");
+    str_cAppend(buff, (char *)data);
+
+        for(int i = 0; i < ffa->UserChannel->Clients->idx; i++) {
+        if(!ffa->UserChannel->Clients->arr[i])
+            break;
+
+        if(ffa->UserChannel->Clients->arr[i] == to) {
+            sock_write(to->con, buff->data);
+            sock_write(to->con, "\r\n$ ");
+        }
+    }
+
+    str_Destruct(buff);
+    free(TIME_BUFF);
+    return 1;
 }
 
 
