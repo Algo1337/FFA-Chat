@@ -52,7 +52,7 @@ void AuthenticateBot(void **arg) {
     str_t bot_name = (str_t)args->arr[0];
     str_t HWID = (str_t)args->arr[1];
 
-    printf("%s : %s\n", bot_name->data, HWID->data);
+    printf("[ AUTHENTICATION ] %s : %s\n", bot_name->data, HWID->data);
     User *check = find_bot(ffa, bot_name, HWID);
     if(!check)
     {
@@ -97,7 +97,6 @@ void handle_bot(FFA *ffa, Client *bot) {
         } else if(str_StartsWith(buff, "send_msg")) {
             
         } else if(!strcmp(buff->data, "get_all_members")) {
-            printf("fetched\n");
             arr_t membs = get_all_members(ffa);
             if(!membs || membs == 0)
                 printf("[ - ] All members error\n");
@@ -108,7 +107,6 @@ void handle_bot(FFA *ffa, Client *bot) {
                 str_cAppend(buff, ";");
             }
 
-            printf("SENDING: %s\n", buff->data);
             sock_write(bot->con, buff->data);
             str_Destruct(buff);
             arr_Destruct(membs, free);

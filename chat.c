@@ -54,6 +54,8 @@ int main() {
 
     set_onjoin_handler(__FFA__, on_join);
     set_onmessage_handler(__FFA__, on_message);
+
+    set_prefix(__FFA__, '/');
     for(int i = 0; i < COMMAND_COUNT; i++)
         add_command(__FFA__, (Command){ Commands[i].name, Commands[i].arg_count, Commands[i].err_msg, Commands[i].handler });
     start_bot(__FFA__, "test_app");

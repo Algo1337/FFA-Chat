@@ -39,7 +39,7 @@ static int is_command_valid(FFA *ffa, str_t cmd) {
         command_t c = (command_t)ffa->commands->arr[i];
 
         str_t buff = new_str(strdup(c->name), 0);
-        if(ffa->prefix != '\0')
+        if(ffa->prefix != '\0') {
             str_Insert(buff, 0, ffa->prefix);
             if(!strcmp(buff->data, cmd->data)) {
                 str_Destruct(buff);
@@ -185,7 +185,7 @@ int set_onmessage_handler(FFA *ffa, void *handler) {
 }
 
 int set_prefix(FFA *ffa, const char p) {
-    if(!ffa || prefix == '\0')
+    if(!ffa || p == '\0')
         return 0;
 
     ffa->prefix = p;
