@@ -18,9 +18,9 @@ typedef enum {
 } event_t;
 
 typedef struct {
-    str_t    *name;
-    str_t    *color;
-    int       rank;
+    str_t    name;
+    str_t    color;
+    int      rank;
 } User;
 
 typedef struct {
@@ -47,7 +47,6 @@ typedef struct {
 typedef Cache *cache_t;
 
 typedef struct {
-    char    prefix;
     char    *name;
     int     arg_count;
     char    *err_msg;
@@ -56,13 +55,15 @@ typedef struct {
 
 typedef Command *command_t;
 typedef arr_t commands_t;
+typedef void *(*handler_t)(message_t);
 
 typedef struct {
     sock_t      Server;
     commands_t  commands;
+    char        prefix;
     void        *OnJoin;
     void        *OnMessage;
-    void        *Handler;
+    handler_t   *Handler;
 
     // thread setting/info
     pthread_t   tid;
@@ -73,17 +74,40 @@ typedef struct {
 
 typedef FFA *ffa_t;
 
-typedef void *(*handler_t)(str_t);
+FFA         *init_ffa(void);
 
-FFA *init_ffa(void);
-static int is_command_valid(FFA *ffa, str_t cmd);
+/* Check if command is valid in cogs */
+static int  is_command_valid(FFA *ffa, str_t cmd);
+
+/* Get HWID ID for Auth */
 static char *get_hwid();
-void start_bot(FFA *ffa, const char *appname);
-int reset_buffer(FFA *ffa);
-int set_onjoin_handler(FFA *ffa, void *handler);
-int set_onmessage_handler(FFA *ffa, void *handler);
-int add_command(FFA *ffa, Command cmd);
-void *send_data(FFA *ffa, event_t action, const char *data);
-users_t extract_all_members(const char *buffer);
-void user_Destruct(User *u);
-void message_Destruct(Message *m);
+
+// Start Bot
+void        start_bot(FFA *ffa, const char *appname);
+
+// Reset Internal Buffer
+int         reset_buffer(FFA *ffa);
+
+// Set OnJoin Event Handler
+int         set_onjoin_handler(FFA *ffa, void *handler);
+
+// Set OnMessage Event Handler
+int         set_onmessage_handler(FFA *ffa, void *handler);
+
+// Set a command prefix
+int         set_prefix(FFA *ffa, const char p);
+
+// Add a command event handler to cogs
+int         add_command(FFA *ffa, Command cmd);
+
+// send data to FFA Server
+void        *send_data(FFA *ffa, event_t action, const char *data);
+
+// Parse and extract all members
+users_t     extract_all_members(const char *buffer);
+
+// Destruct user struct
+void        user_Destruct(User *u);
+
+// Destruct message struct
+void        message_Destruct(Message *m);

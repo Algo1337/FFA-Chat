@@ -11,15 +11,15 @@ void on_message(message_t m) {
     printf("New Message: %s\n", m->content->data);
 }
 
-void help_cmd(message_t message) {
-    printf("%s: %s\n", message->author->name->data, message->content->data);
+handler_t help_cmd(message_t message) {
+    printf("HELP TRIGGERS: %s -> %s\n", message->author->name->data, message->content->data);
     
     /* Get all members */
     users_t members = (users_t)send_data(__FFA__, __get_all_members__, NULL);
     if(!members)
     {
         printf("[ - ] Error, Unable to get members!\n");
-        return;
+        return NULL;
     }
 
     /* debug members */
@@ -28,7 +28,7 @@ void help_cmd(message_t message) {
             break;
 
         user_t member = (user_t)members->arr[i];
-        printf("Member: %s\n", member->name);
+        printf("Member: %s\n", member->name->data);
     }
 
     /* Send Hello In Chat */
@@ -37,7 +37,15 @@ void help_cmd(message_t message) {
         printf("[ - ] Error, Unable to send data to FFA server!\n");
         exit(0);
     }
+
+    return (void *)1;
 }
+
+#define COMMAND_COUNT 1
+Command Commands[] = {
+    { "help", 0, NULL, help_cmd },
+    NULL
+};
 
 int main() {
     __FFA__ = init_ffa();
@@ -46,7 +54,8 @@ int main() {
 
     set_onjoin_handler(__FFA__, on_join);
     set_onmessage_handler(__FFA__, on_message);
-    add_command(__FFA__, (Command){ .prefix = '/', .name = "help", .arg_count = 0, .err_msg = NULL, .handler = help_cmd });
+    for(int i = 0; i < COMMAND_COUNT; i++)
+        add_command(__FFA__, (Command){ Commands[i].name, Commands[i].arg_count, Commands[i].err_msg, Commands[i].handler });
     start_bot(__FFA__, "test_app");
     return 0;
 }

@@ -31,17 +31,27 @@ static int is_command_valid(FFA *ffa, str_t cmd) {
     if(!ffa || !cmd)
         return -1;
 
+
     for(int i = 0; i < ffa->commands->idx; i++) {
         if(!ffa->commands->arr[i])
             break;
 
         command_t c = (command_t)ffa->commands->arr[i];
-        if(c->prefix != 0) {
-            if(c->prefix == cmd->data[0] && !strcmp(c->name, cmd->data + 1))
+
+        str_t buff = new_str(strdup(c->name), 0);
+        if(ffa->prefix != '\0')
+            str_Insert(buff, 0, ffa->prefix);
+            if(!strcmp(buff->data, cmd->data)) {
+                str_Destruct(buff);
                 return i;
-        } else if(!strcmp(c->name, cmd->data)) {
+            }
+        }
+        
+        str_Destruct(buff);
+        if(!strcmp(c->name, cmd->data)) {
             return i;
         }
+
     }
 
     return -1;
@@ -70,7 +80,7 @@ void start_bot(FFA *ffa, const char *appname) {
     if(!ffa)
         return;
 
-    // send auth
+    /* Authentication */
     char abuff[500] = {0};
     strcat(abuff, "cfk_v1_0_CONNECT;");
     strncat(abuff, appname, strlen(appname));
@@ -107,27 +117,34 @@ void start_bot(FFA *ffa, const char *appname) {
             int cpos = str_FindChar(buff, ';', 0);
             int msg_pos = str_FindChar(buff, ';', 1);
 
-            m->content = new_str(str_GetSub(buff, msg_pos, buff->idx), 0);
+            m->content = new_str(str_GetSub(buff, msg_pos + 1, buff->idx), 0);
+            m->timestamp = NULL;
             m->author = (User *)malloc(sizeof(User));
 
-            str_t author = new_str(str_GetSub(buff, cpos, msg_pos), 0);
-            arr_t author_info = str_SplitAt(author, ",");
+            str_t author = new_str(str_GetSub(buff, cpos + 1, msg_pos), 0);
+            arr_t author_info = str_SplitAt(author, ',');
 
             m->author->name = new_str(strdup(((str_t)author_info->arr[0])->data), 0);
-            m->author->color = atoi(((str_t)author_info->arr[1])->data);
+            m->author->color = new_str(strdup(((str_t)author_info->arr[1])->data), 0);
             m->author->rank = atoi(((str_t)author_info->arr[2])->data);
             
             if(ffa->OnMessage)
                 ((handler_t)(void *)ffa->OnMessage)(m);
 
-            arr_t args = str_SplitAt(m->data, ' ');
             int pos = 0;
-            if((pos = is_command_valid(ffa, (str_t)args->arr[1])) != -1) 
-                ((void *(*)(message_t))((Command *)ffa->commands->arr[pos])->handler)(m);
+            if(strstr(m->content->data, " ")) {
+                arr_t args = str_SplitAt(m->content, ' ');
+                if((pos = is_command_valid(ffa, (str_t)args->arr[1])) != -1) 
+                    ((void *(*)(message_t))((Command *)ffa->commands->arr[pos])->handler)(m);
+
+                arr_Destruct(args, str_Destruct);
+            } else {
+                if((pos = is_command_valid(ffa, m->content)) != -1) 
+                    ((void *(*)(message_t))((Command *)ffa->commands->arr[pos])->handler)(m);
+            }
 
             str_Destruct(author);
-            str_Destruct(author_info);
-            arr_Destruct(args, str_Destruct);
+            arr_Destruct(author_info, str_Destruct);
             message_Destruct(m);
         }
 
@@ -164,6 +181,14 @@ int set_onmessage_handler(FFA *ffa, void *handler) {
         return 0;
 
     ffa->OnMessage = handler;
+    return 1;
+}
+
+int set_prefix(FFA *ffa, const char p) {
+    if(!ffa || prefix == '\0')
+        return 0;
+
+    ffa->prefix = p;
     return 1;
 }
 
@@ -255,8 +280,8 @@ users_t extract_all_members(const char *buffer) {
         }
 
         User *u = (User *)malloc(sizeof(User));
-        u->name = strdup(((str_t)args->arr[0])->data);
-        u->color = strdup(((str_t)args->arr[1])->data);
+        u->name = new_str(strdup(((str_t)args->arr[0])->data), 0);
+        u->color = new_str(strdup(((str_t)args->arr[1])->data), 0);
         u->rank = atoi(((str_t)args->arr[1])->data);
 
         arr_Append(users, u);
