@@ -58,6 +58,7 @@ int main() {
     set_prefix(__FFA__, '/');
     for(int i = 0; i < COMMAND_COUNT; i++)
         add_command(__FFA__, (Command){ Commands[i].name, Commands[i].arg_count, Commands[i].err_msg, Commands[i].handler });
+        
     start_bot(__FFA__, "test_app");
     return 0;
 }

@@ -4,6 +4,8 @@
         "__init__.h": "c",
         "cstdlib": "c",
         "text_encoding": "c",
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "stddef.h": "c",
+        "charconv": "c"
     }
 }
